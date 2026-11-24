@@ -1,0 +1,9 @@
+Indic Shift
+Copyright 2026 Chariot Artificial Intelligence Private Limited
+
+This product includes software and tokenizer data developed by Chariot Artificial Intelligence Private Limited.
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes data derived from the Unicode Character Database, version 15.0.0 (the
+transform tables in src/indic_shift/data/transform.json). Unicode data is Copyright (c) Unicode, Inc.
+and is used under the Unicode License V3 (see LICENSE-UNICODE).

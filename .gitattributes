@@ -1,0 +1,4 @@
+# Keep LF everywhere; never convert the pinned data files (their sha256 must not change on checkout).
+* text=auto eol=lf
+src/indic_shift/data/** -text -diff linguist-generated=true
+tests/golden/golden.jsonl -text linguist-generated=true

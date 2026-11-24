@@ -1,0 +1,109 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e ".[dev]"
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy
+      - name: Transform tables reproduce from Unicode 15.0 (CPython 3.12)
+        run: python tools/build_transform.py --check
+      - name: Golden ids
+        run: python tools/make_golden.py --check
+
+  test:
+    name: test (${{ matrix.os }}, py${{ matrix.python }}, tokenizers ${{ matrix.tokenizers }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        tokenizers: [minimum, latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
+          allow-prereleases: true
+      - name: Install
+        shell: bash
+        run: |
+          python -m pip install ".[test]"
+          if [ "${{ matrix.tokenizers }}" = minimum ]; then python -m pip install "tokenizers==0.22.0"; fi
+          python -c "import sys, tokenizers; print(sys.version, tokenizers.__version__)"
+      - name: Test the installed package
+        shell: bash
+        run: |
+          mkdir -p ../run && cp -r tests ../run/ && cd ../run
+          python -m pytest -q tests
+
+  transformers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        transformers: ["4.56.0", "4.57.*", "5.*"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: python -m pip install ".[test]" "transformers==${{ matrix.transformers }}"
+      - run: python -m pytest -q tests/test_hf.py
+      - run: python examples/transformers_usage.py
+
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: python -m pip install build twine
+      - run: python -m build
+      - run: python -m twine check --strict dist/*
+      - name: Check distribution contents
+        run: python tools/check_dist.py dist
+      - name: Install the wheel and run the examples
+        run: |
+          python -m venv /tmp/venv
+          /tmp/venv/bin/pip install dist/*.whl
+          cd /tmp && for f in quickstart streaming prompt_runs; do /tmp/venv/bin/python "$GITHUB_WORKSPACE/examples/$f.py"; done
+          /tmp/venv/bin/indic-shift encode "नमस्ते दुनिया"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7

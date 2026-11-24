@@ -1,0 +1,95 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "indic-shift"
+version = "1.0.0"
+description = "Indic Shift: an Indic-first byte-level BPE tokenizer with exact, reversible script sharing"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0 AND Unicode-3.0"
+license-files = ["LICENSE", "LICENSE-UNICODE", "NOTICE"]
+authors = [{ name = "Chariot Artificial Intelligence Private Limited" }]
+keywords = ["tokenizer", "bpe", "indic", "multilingual", "nlp", "llm"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Natural Language :: Bengali",
+  "Natural Language :: English",
+  "Natural Language :: Hindi",
+  "Natural Language :: Marathi",
+  "Natural Language :: Panjabi",
+  "Natural Language :: Tamil",
+  "Natural Language :: Telugu",
+  "Natural Language :: Urdu",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Text Processing :: Linguistic",
+  "Typing :: Typed",
+]
+# 0.22 is the first tokenizers release whose regex engine uses Unicode 16.0 character classes,
+# as the reference ids do (older releases split some recently encoded scripts differently).
+dependencies = ["tokenizers>=0.22,<1"]
+
+[project.optional-dependencies]
+transformers = ["transformers>=4.56"]
+test = ["pytest>=8"]
+dev = ["pytest>=8", "ruff>=0.8", "mypy>=1.13", "build>=1.2", "twine>=6.1"]
+
+[project.urls]
+Homepage = "https://github.com/Chariot-AI/indic-shift"
+Source = "https://github.com/Chariot-AI/indic-shift"
+Issues = "https://github.com/Chariot-AI/indic-shift/issues"
+Changelog = "https://github.com/Chariot-AI/indic-shift/blob/main/CHANGELOG.md"
+
+[project.scripts]
+indic-shift = "indic_shift.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/indic_shift"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src",
+  "/tests",
+  "/tools",
+  "/examples",
+  "/README.md",
+  "/SPEC.md",
+  "/CHANGELOG.md",
+  "/LICENSE",
+  "/LICENSE-UNICODE",
+  "/NOTICE",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["RUF001", "RUF003", "B905", "RUF005", "RUF012"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["RUF001"]
+"src/indic_shift/_registry.py" = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src/indic_shift"]
+check_untyped_defs = true
+warn_unused_ignores = false
+ignore_missing_imports = true
